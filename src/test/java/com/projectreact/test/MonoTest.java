@@ -2,6 +2,7 @@ package com.projectreact.test;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.reactivestreams.Subscription;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -48,6 +49,43 @@ public class MonoTest {
         StepVerifier.create(mono)
                 .expectError(RuntimeException.class)
                 .verify();
+
+    }
+
+    @Test
+    public void monoSubscriberConsumerComplete() {
+        String name = "Petterson Santos";
+        Mono<String> mono = Mono.just(name)
+                .log()
+                .map(String::toUpperCase);
+
+        mono.subscribe(s -> log.info("Value {}", s),
+                Throwable::printStackTrace,
+                () -> log.info("FINISHED"));
+
+        log.info("-------------------------------------");
+        StepVerifier.create(mono)
+                .expectNext(name.toUpperCase())
+                .verifyComplete();
+
+    }
+
+    @Test
+    public void monoSubscriberConsumerSubscription() {
+        String name = "Petterson Santos";
+        Mono<String> mono = Mono.just(name)
+                .log()
+                .map(String::toUpperCase);
+
+        mono.subscribe(s -> log.info("Value {}", s),
+                Throwable::printStackTrace,
+                () -> log.info("FINISHED"),
+                Subscription::cancel);
+
+        log.info("-------------------------------------");
+        StepVerifier.create(mono)
+                .expectNext(name.toUpperCase())
+                .verifyComplete();
 
     }
 }
