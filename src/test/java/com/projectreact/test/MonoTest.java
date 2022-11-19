@@ -43,6 +43,7 @@ public class MonoTest {
                 .map(s -> {throw new RuntimeException("Testing mono with error");});
 
         mono.subscribe(s -> log.info("Name {}", s), s -> log.error("Something bad happened"));
+        mono.subscribe(s -> log.info("Name {}", s), Throwable::printStackTrace);
         log.info("-------------------------------------");
         StepVerifier.create(mono)
                 .expectError(RuntimeException.class)
