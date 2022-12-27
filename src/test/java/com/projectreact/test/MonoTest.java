@@ -66,7 +66,6 @@ public class MonoTest {
         StepVerifier.create(mono)
                 .expectError(RuntimeException.class)
                 .verify();
-
     }
 
     @Test
@@ -124,8 +123,52 @@ public class MonoTest {
                 subscription -> subscription.request(5));
 
         log.info("-------------------------------------");
-//        StepVerifier.create(mono)
-//                .expectNext(name.toUpperCase())
-//                .verifyComplete();
+    }
+
+    @Test
+    public void monoDoOnError() {
+        Mono<Object> error = Mono.error(new IllegalArgumentException("Illegal argument exception"))
+                .doOnError(e -> MonoTest.log.error("Error message: {}", e.getMessage()))
+                .doOnNext(s -> log.info("Executing this doOnNext"))
+                .log();
+
+        StepVerifier.create(error)
+                .expectError(IllegalArgumentException.class)
+                .verify();
+    }
+
+    @Test
+    public void monoDoOnErrorResume() {
+        String name = "Petterson Santos";
+
+        Mono<Object> error = Mono.error(new IllegalArgumentException("Illegal argument exception"))
+                .doOnError(e -> MonoTest.log.error("Error message: {}", e.getMessage()))
+                .onErrorResume(s -> {
+                    log.info("Executing this doOnNext");
+                    return Mono.just(name);
+                })
+                .log();
+
+        StepVerifier.create(error)
+                .expectNext(name)
+                .verifyComplete();
+    }
+
+    @Test
+    public void monoDoOnErrorReturn() {
+        String name = "Petterson Santos";
+
+        Mono<Object> error = Mono.error(new IllegalArgumentException("Illegal argument exception"))
+                .onErrorReturn("EMPTY")
+                .onErrorResume(s -> {
+                    log.info("Executing this doOnNext");
+                    return Mono.just(name);
+                })
+                .doOnError(e -> MonoTest.log.error("Error message: {}", e.getMessage()))
+                .log();
+
+        StepVerifier.create(error)
+                .expectNext("EMPTY")
+                .verifyComplete();
     }
 }
