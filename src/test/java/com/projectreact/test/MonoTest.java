@@ -7,6 +7,23 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 @Slf4j
+/**
+ * Reactive Streams
+ * 1. Asynchronous
+ * 2. Non-blocking
+ * 3. Backpressure
+ * Publisher <- (subscribe) Subscriber
+ * Subscription is created
+ * Publisher (onSubscribe with the subscription) -> Subscriber
+ * Subscription <- (request N) Subscriber
+ * Publisher -> (onNext) Subscriber
+ * until:
+ * Publisher sends all the objects requested.
+ * Publisher sends all the object it has. (onComplete) subscriber and subscription will be canceled.
+ * There is an error. (onError) -> subscriber and subscription will be canceled.
+ *
+ * Mono = 1 obj or nothing
+ */
 public class MonoTest {
 
     @Test
@@ -80,12 +97,35 @@ public class MonoTest {
         mono.subscribe(s -> log.info("Value {}", s),
                 Throwable::printStackTrace,
                 () -> log.info("FINISHED"),
-                Subscription::cancel);
+                subscription -> subscription.request(5));
 
         log.info("-------------------------------------");
         StepVerifier.create(mono)
                 .expectNext(name.toUpperCase())
                 .verifyComplete();
+    }
 
+    @Test
+    public void monoDoOnMethods() {
+        String name = "Petterson Santos";
+        Mono<Object> mono = Mono.just(name)
+                .log()
+                .map(String::toUpperCase)
+                .doOnSubscribe(subscription -> log.info("Subscribed"))
+                .doOnRequest(longNumber -> log.info("Request Received, starting doing something..."))
+                .doOnNext(s -> log.info("Value is here. Executing doOnNext {}", s))
+                .flatMap(s -> Mono.empty())
+                .doOnNext(s -> log.info("Value is here. Executing doOnNext {}", s))
+                .doOnSuccess(s ->log.info("doOnSuccess executed"));
+
+        mono.subscribe(s -> log.info("Value {}", s),
+                Throwable::printStackTrace,
+                () -> log.info("FINISHED"),
+                subscription -> subscription.request(5));
+
+        log.info("-------------------------------------");
+//        StepVerifier.create(mono)
+//                .expectNext(name.toUpperCase())
+//                .verifyComplete();
     }
 }
